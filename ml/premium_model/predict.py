@@ -1,13 +1,15 @@
 import pickle
 import numpy as np
 import pandas as pd
+import os
+BASE = os.path.dirname(os.path.abspath(__file__))
 
-model =       pickle.load(open('ml/premium_model/model.pkl', 'rb'))
-le_city =     pickle.load(open('ml/premium_model/le_city.pkl', 'rb'))
-le_zone =     pickle.load(open('ml/premium_model/le_zone.pkl', 'rb'))
-le_season =   pickle.load(open('ml/premium_model/le_season.pkl', 'rb'))
-le_infra =    pickle.load(open('ml/premium_model/le_infra.pkl', 'rb'))
-le_activity = pickle.load(open('ml/premium_model/le_activity.pkl', 'rb'))
+model =       pickle.load(open(os.path.join(BASE, 'model.pkl'), 'rb'))
+le_city =     pickle.load(open(os.path.join(BASE, 'le_city.pkl'), 'rb'))
+le_zone =     pickle.load(open(os.path.join(BASE, 'le_zone.pkl'), 'rb'))
+le_season =   pickle.load(open(os.path.join(BASE, 'le_season.pkl'), 'rb'))
+le_infra =    pickle.load(open(os.path.join(BASE, 'le_infra.pkl'), 'rb'))
+le_activity = pickle.load(open(os.path.join(BASE, 'le_activity.pkl'), 'rb'))
 
 city_data = {
     "Chennai":    {"disruption_freq": 9,  "infrastructure": "average", "is_rural": False, "zone": "high"},

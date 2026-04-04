@@ -14,7 +14,7 @@ const app = express();
 // ─── Core middleware ─────────────────────────────────────────────
 app.use(
   cors({
-    origin: process.env.CLIENT_ORIGIN || "http://localhost:8000",
+    origin: process.env.CLIENT_ORIGIN || "http://localhost:5173",
     credentials: true,
   })
 );

@@ -1,6 +1,5 @@
-// src/lib/api.ts
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 // ─── Token helpers ───────────────────────────────────────────────
 export const getAccessToken = () => localStorage.getItem("accessToken");
 export const getRefreshToken = () => localStorage.getItem("refreshToken");
@@ -38,10 +37,8 @@ export const apiFetch = async (
 
   let res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
 
-  // Auto-refresh on 401
   if (res.status === 401 && getRefreshToken()) {
     if (isRefreshing) {
-      // Queue this request until refresh completes
       return new Promise((resolve) => {
         refreshQueue.push(async (newToken) => {
           headers["Authorization"] = `Bearer ${newToken}`;

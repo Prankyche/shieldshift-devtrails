@@ -52,25 +52,16 @@ const fallbackPlans: Plan[] = [
   },
 ];
 
-// TODO: Replace with actual ML model API call when ready
-// Example: fetch("https://your-ml-api.com/predict", { method: "POST", body: JSON.stringify(userData) })
-// TODO: Replace BACKEND_API_URL with your teammate's actual backend URL
-const BACKEND_API_URL = "https://your-backend-api.com/api/prices";
+const ML_API_URL = "http://localhost:8001";
 
 async function fetchMLPrices(): Promise<{ basic: number; standard: number; premium: number }> {
   try {
-    const response = await fetch(BACKEND_API_URL);
-    if (!response.ok) throw new Error("Backend unavailable");
-    const data = await response.json();
-    return {
-      basic: data.basic ?? data.basic_price ?? 199,
-      standard: data.standard ?? data.standard_price ?? 349,
-      premium: data.premium ?? data.premium_price ?? 599,
-    };
+    const response = await fetch(`${ML_API_URL}/api/prices/default`);
+    if (!response.ok) throw new Error("ML API unavailable");
+    return await response.json();
   } catch (error) {
     console.warn("ML backend not available, using fallback prices:", error);
-    // Fallback prices when backend is not connected yet
-    return { basic: 199, standard: 349, premium: 599 };
+    return { basic: 29, standard: 49, premium: 79 };
   }
 }
 
