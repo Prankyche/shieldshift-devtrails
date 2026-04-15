@@ -7,6 +7,10 @@ const cookieParser = require("cookie-parser");
 const pool = require("./config/db");
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/user");
+
+const policiesRoutes = require("./routes/policies");
+const claimsRoutes = require("./routes/claims");
+const settingsRoutes = require("./routes/settings");
 const { notFound, errorHandler } = require("./middleware/errorHandler");
 
 const app = express();
