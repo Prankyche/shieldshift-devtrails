@@ -8,10 +8,7 @@ const sanitizeUser = (user) => {
   return safe;
 };
 
-/**
- * GET /api/settings/profile
- * Returns the full profile of the logged-in user.
- */
+
 const getProfile = async (req, res, next) => {
   try {
     const { rows } = await pool.query(
@@ -29,11 +26,7 @@ const getProfile = async (req, res, next) => {
   }
 };
 
-/**
- * PATCH /api/settings/profile
- * Body: { full_name?, city?, work_type?, experience?, avg_daily_earnings? }
- * Updates profile fields (phone is excluded — needs OTP flow).
- */
+
 const updateProfile = async (req, res, next) => {
   try {
     const allowed = ["full_name", "city", "work_type", "experience", "avg_daily_earnings"];

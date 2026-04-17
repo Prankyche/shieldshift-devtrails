@@ -12,7 +12,6 @@ const getAutoClaimFromML = async (city) => {
 
     if (!data.payout_triggered) return null;
 
-    // Convert % → actual ₹
     const baseAmount = 500;
 
     const amount = (data.payout_percent / 100) * baseAmount;
