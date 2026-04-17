@@ -34,8 +34,42 @@ const STYLE_MAP: Record<string, { color: string; badge: string | null }> = {
   basic:    { color: "border-border",                              badge: null },
   standard: { color: "border-secondary ring-2 ring-secondary/20", badge: "Most Popular" },
   premium:  { color: "border-border",                              badge: null },
+  gold:     { color: "border-yellow-500/10 ring-2 ring-yellow-500/20", badge: "Best Value" },
+  elite:    { color: "border-emerald-500/20 ring-2 ring-emerald-500/20", badge: "Premium" },
 };
 
+const DEFAULT_PLANS: UiPlan[] = [
+  {
+    id: "basic",
+    slug: "basic",
+    name: "Basic Protection",
+    base_price: 299,
+    period: "month",
+    coverage: ["Accidental damage", "Package loss", "Delivery delay support"],
+    color: STYLE_MAP.basic.color,
+    badge: STYLE_MAP.basic.badge,
+  },
+  {
+    id: "standard",
+    slug: "standard",
+    name: "Standard Shield",
+    base_price: 599,
+    period: "month",
+    coverage: ["Accidental damage", "Package loss", "Delivery delay support", "Fraud assistance"],
+    color: STYLE_MAP.standard.color,
+    badge: STYLE_MAP.standard.badge,
+  },
+  {
+    id: "premium",
+    slug: "premium",
+    name: "Premium Plus",
+    base_price: 899,
+    period: "month",
+    coverage: ["Accidental damage", "Package loss", "Priority claims", "Medical reimbursement"],
+    color: STYLE_MAP.premium.color,
+    badge: STYLE_MAP.premium.badge,
+  },
+];
 
 export default function Policies() {
   const navigate = useNavigate();
@@ -52,25 +86,42 @@ export default function Policies() {
           ...p,
           ...(STYLE_MAP[p.slug] ?? { color: "border-border", badge: null }),
         }));
-        setPlans(ui);
+        setPlans(ui.length ? ui : DEFAULT_PLANS);
       })
-      .catch((err: unknown) =>
-        toast.error(err instanceof Error ? err.message : "Failed to load plans.")
-      )
+      .catch((err: unknown) => {
+        toast.error(err instanceof Error ? err.message : "Failed to load plans. Showing default plan options.");
+        setPlans(DEFAULT_PLANS);
+      })
       .finally(() => setLoadingPlans(false));
   }, []);
+
+  const saveActivePolicy = (policy: any) => {
+    try {
+      localStorage.setItem("shieldshift.activePolicy", JSON.stringify(policy));
+    } catch {
+      // ignore storage failures
+    }
+  };
 
   const handleConfirm = async () => {
     if (!selectedPlan) return;
     setConfirming(true);
     try {
-      const res = await api.post<{ success: boolean; message: string }>(
+      const res = await api.post<{ success: boolean; message: string; data?: { policy?: Plan } }>(
         "/api/policies/subscribe",
         { plan_slug: selectedPlan.slug }
       );
       toast.success(res.message ?? "Subscribed successfully!");
+      const policy = res.data?.policy ?? {
+        plan_name: selectedPlan.name,
+        coverage: selectedPlan.coverage,
+        price_paid: selectedPlan.base_price,
+        expires_at: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString(),
+        status: "active",
+      };
+      saveActivePolicy(policy);
       setSelectedPlan(null);
-      navigate("/dashboard");
+      navigate("/dashboard", { state: { policy } });
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Subscription failed.");
     } finally {

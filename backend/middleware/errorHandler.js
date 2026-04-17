@@ -18,6 +18,19 @@ const errorHandler = (err, req, res, next) => {
     });
   }
 
+  if (
+    err.code === "ECONNREFUSED" ||
+    err.message?.includes("ECONNREFUSED") ||
+    (err.name === "AggregateError" &&
+      Array.isArray(err.errors) &&
+      err.errors.some((inner) => inner?.code === "ECONNREFUSED"))
+  ) {
+    return res.status(503).json({
+      success: false,
+      message: "Database connection refused. Ensure PostgreSQL is running and accessible.",
+    });
+  }
+
   const statusCode = err.statusCode || err.status || 500;
   return res.status(statusCode).json({
     success: false,

@@ -75,7 +75,7 @@ def predict_premium( city, season, activity_tier, poverty_score):
     'infra_enc', 'is_rural_enc', 'activity_enc', 'poverty_score'
 ])
     base_premium = round(float(model.predict(features)[0]))
-    premium_cap = 65 if is_rural else 50
+    premium_cap = 120 if is_rural else 100
     base_premium = max(20, min(premium_cap, base_premium))
 
     avg_daily_income = {'low': 300, 'medium': 350, 'high': 380, 'critical': 360}[zone]

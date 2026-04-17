@@ -14,7 +14,7 @@ const pool = new Pool(
         port: Number(process.env.DB_PORT) || 5432,
         database: process.env.DB_NAME || "shieldshift",
         user: process.env.DB_USER || "postgres",
-        password: process.env.DB_PASSWORD || "shri2007",
+        password: process.env.DB_PASSWORD || "12345",
       }
 );
 

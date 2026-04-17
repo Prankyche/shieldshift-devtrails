@@ -5,7 +5,13 @@ const pool = require("../config/db");
 
 const SALT_ROUNDS = 12;
 
-
+const generateToken = (user) => {
+  return jwt.sign(
+    { id: user.id },
+    process.env.JWT_SECRET,
+    { expiresIn: "1h" }
+  );
+};
 const signAccessToken = (payload) =>
   jwt.sign(payload, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || "15m",
@@ -93,7 +99,11 @@ const register = async (req, res, next) => {
 const login = async (req, res, next) => {
   try {
     const { phone, password } = req.body;
-    const normalizedPhone = phone.replace(/\s/g, "");
+    const normalizedPhone = typeof phone === "string" ? phone.replace(/\s/g, "") : "";
+
+    if (!normalizedPhone) {
+      return res.status(400).json({ success: false, message: "A valid phone number is required." });
+    }
 
     const { rows } = await pool.query("SELECT * FROM users WHERE phone = $1", [normalizedPhone]);
     const user = rows[0];

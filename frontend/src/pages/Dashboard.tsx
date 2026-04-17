@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Shield, AlertTriangle, IndianRupee, FileText, ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
 import StatCard from "@/components/StatCard";
 import AppLayout from "@/components/AppLayout";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
+import { mlApi } from "@/lib/mlApi";
 
 // ─── types ──────────────────────────────────────────────────────
 
@@ -30,6 +31,13 @@ interface Claim {
   created_at: string;
 }
 
+interface WorkerDashboard {
+  total_earnings_protected: number;
+  active_weekly_coverage: number;
+  claim_status: Record<string, number>;
+  recent_claims: Claim[];
+}
+
 
 const fmt = {
   date: (iso: string) =>
@@ -39,38 +47,94 @@ const fmt = {
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const locationState = location.state as { policy?: Policy; claim?: Claim; refreshClaims?: boolean } | null;
+  const initialPolicy = locationState?.policy ?? null;
+
+  const loadStoredPolicy = (): Policy | null => {
+    if (typeof window === "undefined") return null;
+    try {
+      return JSON.parse(localStorage.getItem("shieldshift.activePolicy") || "null");
+    } catch {
+      return null;
+    }
+  };
+
+  const saveActivePolicy = (policy: Policy | null) => {
+    if (typeof window === "undefined") return;
+    try {
+      if (policy) {
+        localStorage.setItem("shieldshift.activePolicy", JSON.stringify(policy));
+      } else {
+        localStorage.removeItem("shieldshift.activePolicy");
+      }
+    } catch {
+      // ignore
+    }
+  };
 
   const [profile,  setProfile]  = useState<UserProfile | null>(null);
-  const [policy,   setPolicy]   = useState<Policy | null>(null);
+  const [policy,   setPolicy]   = useState<Policy | null>(initialPolicy || loadStoredPolicy());
   const [claims,   setClaims]   = useState<Claim[]>([]);
+  const [workerMetrics, setWorkerMetrics] = useState<WorkerDashboard | null>(null);
   const [loading,  setLoading]  = useState(true);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [profileRes, policyRes, claimsRes] = await Promise.all([
+        const [profileRes, policyRes] = await Promise.all([
           api.get<{ success: boolean; data: { user: UserProfile } }>("/api/settings/profile"),
           api.get<{ success: boolean; data: { policy: Policy | null } }>("/api/policies/my"),
-          api.get<{ success: boolean; data: { claims: Claim[] } }>("/api/claims"),
         ]);
 
         setProfile(profileRes.data.user);
-        setPolicy(policyRes.data.policy);
-        setClaims(claimsRes.data.claims.slice(0, 3)); // show 3 most recent
+        const apiPolicy = policyRes.data.policy || initialPolicy || loadStoredPolicy();
+        setPolicy(apiPolicy);
+        saveActivePolicy(apiPolicy);
+
+        let allClaims: Claim[] = [];
+        try {
+          const claimsRes = await api.get<{ success: boolean; data: { claims: Claim[] } }>("/api/claims");
+          allClaims = claimsRes.data.claims;
+        } catch (err: unknown) {
+          if (locationState?.claim) {
+            allClaims = [locationState.claim];
+          } else {
+            throw err;
+          }
+        }
+
+        const mergedClaims = locationState?.claim
+          ? [locationState.claim, ...allClaims].filter(
+              (claim, index, array) => array.findIndex((c) => c.id === claim.id) === index
+            )
+          : allClaims;
+
+        setClaims(mergedClaims.slice(0, 3));
       } catch (err: unknown) {
         toast.error(err instanceof Error ? err.message : "Failed to load dashboard.");
       } finally {
         setLoading(false);
       }
+
+      try {
+        const workerRes = await mlApi.getWorkerDashboard("worker-001");
+        setWorkerMetrics(workerRes);
+      } catch {
+        setWorkerMetrics(null);
+      }
     };
 
     load();
-  }, []);
+  }, [location.key]);
 
 
   const activeClaims   = claims.filter((c) => c.status === "pending" || c.status === "processing");
+  const latestClaim    = claims[0] ?? null;
   const pendingPayout  = activeClaims.reduce((s, c) => s + (c.est_payout ?? 0), 0);
   const firstName      = profile?.full_name?.split(" ")[0] ?? "there";
+  const totalWorkerClaims = workerMetrics ? Object.values(workerMetrics.claim_status).reduce((sum, value) => sum + value, 0) : 0;
+  const fraudRate = workerMetrics ? Math.round(((workerMetrics.claim_status.rejected || 0) / Math.max(1, totalWorkerClaims)) * 100) : 0;
 
 
   if (loading) {
@@ -142,6 +206,65 @@ export default function Dashboard() {
             icon={FileText}
           />
         </div>
+
+        {workerMetrics && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <StatCard
+              title="Protected Earnings"
+              value={`₹${workerMetrics.total_earnings_protected.toLocaleString("en-IN")}`}
+              subtitle="Payments secured from approved claims"
+              icon={IndianRupee}
+              variant="secondary"
+            />
+            <StatCard
+              title="Weekly Coverage"
+              value={`${workerMetrics.active_weekly_coverage}`}
+              subtitle="Active claims in coverage"
+              icon={Shield}
+              variant="accent"
+            />
+            <StatCard
+              title="Fraud Flag Rate"
+              value={`${fraudRate}%`}
+              subtitle="Rejected claims share"
+              icon={AlertTriangle}
+              variant="warning"
+            />
+          </div>
+        )}
+
+        {latestClaim && (
+          <div className="bg-card rounded-xl border card-shadow p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <p className="text-sm uppercase text-muted-foreground tracking-[0.2em]">Latest claim</p>
+                <h2 className="text-xl font-semibold text-foreground">{latestClaim.claim_ref}</h2>
+                <p className="text-sm text-muted-foreground">Submitted {fmt.date(latestClaim.created_at)}</p>
+              </div>
+              <div className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-foreground bg-muted/50">
+                {latestClaim.status === 'pending' && 'Pending'}
+                {latestClaim.status === 'processing' && 'Processing'}
+                {latestClaim.status === 'approved' && 'Approved'}
+                {latestClaim.status === 'rejected' && 'Rejected'}
+              </div>
+            </div>
+
+            <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="rounded-xl bg-muted/70 p-4">
+                <p className="text-xs text-muted-foreground uppercase">Estimated payout</p>
+                <p className="mt-2 text-lg font-semibold text-foreground">₹{Number(latestClaim.est_payout ?? 0).toLocaleString('en-IN')}</p>
+              </div>
+              <div className="rounded-xl bg-muted/70 p-4">
+                <p className="text-xs text-muted-foreground uppercase">Status</p>
+                <p className="mt-2 text-lg font-semibold text-foreground capitalize">{latestClaim.status}</p>
+              </div>
+              <div className="rounded-xl bg-muted/70 p-4">
+                <p className="text-xs text-muted-foreground uppercase">Source</p>
+                <p className="mt-2 text-lg font-semibold text-foreground">Claim management</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ── Quick Actions ──────────────────────────────────── */}
         <div>

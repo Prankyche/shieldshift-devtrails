@@ -1,0 +1,21 @@
+{
+  "claims": [],
+  "transactions": [],
+  "users": [
+    {
+      "user_id": "worker-001",
+      "role": "worker",
+      "name": "Priya Kumar"
+    },
+    {
+      "user_id": "worker-002",
+      "role": "worker",
+      "name": "Sahil Sharma"
+    },
+    {
+      "user_id": "admin",
+      "role": "admin",
+      "name": "ShieldShift Admin"
+    }
+  ]
+}

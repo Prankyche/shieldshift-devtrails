@@ -1,5 +1,5 @@
 require("dotenv").config();
-
+require('dotenv').config();
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
@@ -7,13 +7,37 @@ const cookieParser = require("cookie-parser");
 const pool = require("./config/db");
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/user");
+
+const policiesRoutes = require("./routes/policies");
+const claimsRoutes = require("./routes/claims");
+const settingsRoutes = require("./routes/settings");
 const { notFound, errorHandler } = require("./middleware/errorHandler");
 
 const app = express();
 
+const defaultOrigins = ["http://localhost:5173", "http://127.0.0.1:5173", "http://[::1]:5173"];
+const allowedOrigins = process.env.CLIENT_ORIGIN
+  ? Array.from(
+      new Set([
+        ...process.env.CLIENT_ORIGIN.split(",").map((origin) => origin.trim()),
+        ...defaultOrigins,
+      ])
+    )
+  : defaultOrigins;
+
+const isLocalDevOrigin = (origin) =>
+  typeof origin === "string" &&
+  (origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:") || origin.startsWith("http://[::1]:"));
+
 app.use(
   cors({
-    origin: process.env.CLIENT_ORIGIN || "http://localhost:5173",
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin) || isLocalDevOrigin(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS policy does not allow access from ${origin}`));
+      }
+    },
     credentials: true,
   })
 );

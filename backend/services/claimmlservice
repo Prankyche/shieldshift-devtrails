@@ -1,0 +1,30 @@
+const axios = require("axios");
+
+const getAutoClaimFromML = async (city) => {
+  try {
+    const res = await axios.post("http://localhost:8000/trigger", {
+      city,
+      worker_shift_start: 8,
+      worker_shift_end: 22,
+    });
+
+    const data = res.data;
+
+    if (!data.payout_triggered) return null;
+
+    // Convert % → actual ₹
+    const baseAmount = 500;
+
+    const amount = (data.payout_percent / 100) * baseAmount;
+
+    return {
+      amount,
+      triggers: data.triggers,
+    };
+  } catch (err) {
+    console.error("ML ERROR:", err.message);
+    return null;
+  }
+};
+
+module.exports = { getAutoClaimFromML };

@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   CloudRain, MapPin, Clock, IndianRupee,
   FileText, CheckCircle2, AlertCircle, XCircle, Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import AppLayout from "@/components/AppLayout";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
@@ -50,10 +52,14 @@ const fmt = {
 };
 
 export default function Claims() {
+  const navigate = useNavigate();
   const [activeClaim, setActiveClaim]   = useState<Claim | null>(null);
   const [pastClaims,  setPastClaims]    = useState<Claim[]>([]);
   const [loading,     setLoading]       = useState(true);
   const [submitting,  setSubmitting]    = useState(false);
+  const [area,        setArea]          = useState("");
+  const [amount,      setAmount]        = useState<string>("");
+  const [duration,    setDuration]      = useState<string>("");
 
   useEffect(() => {
     const load = async () => {
@@ -81,13 +87,27 @@ export default function Claims() {
 
   const handleRequest = async () => {
     setSubmitting(true);
+
+    const requestedAmount = amount ? Number(amount) : 0;
+    if (!requestedAmount || requestedAmount <= 0) {
+      toast.error("Please enter a valid insurance amount.");
+      setSubmitting(false);
+      return;
+    }
+
     try {
       const res = await api.post<{ success: boolean; data: { claim: Claim }; message: string }>(
         "/api/claims",
-        { event_type: "Weather Disruption" }
+        {
+          event_type: "Weather Disruption",
+          area: area.trim() || null,
+          duration_hrs: duration ? Number(duration) : null,
+          est_payout: requestedAmount,
+        }
       );
       toast.success(res.message ?? "Claim submitted successfully!");
       setActiveClaim(res.data.claim);
+      navigate("/dashboard", { state: { claim: res.data.claim, refreshClaims: true } });
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Failed to submit claim.");
     } finally {
@@ -182,6 +202,37 @@ export default function Claims() {
                 <p className="text-sm text-muted-foreground">
                   No active claim. Submit one below if you experienced a weather disruption today.
                 </p>
+              </div>
+              <div className="grid gap-4 md:grid-cols-3">
+                <label className="space-y-2 text-sm text-foreground">
+                  <span>Insurance Amount</span>
+                  <Input
+                    type="number"
+                    min="0"
+                    placeholder="₹0"
+                    value={amount}
+                    onChange={(event) => setAmount(event.target.value)}
+                  />
+                </label>
+                <label className="space-y-2 text-sm text-foreground">
+                  <span>Area</span>
+                  <Input
+                    type="text"
+                    placeholder="e.g. Koramangala"
+                    value={area}
+                    onChange={(event) => setArea(event.target.value)}
+                  />
+                </label>
+                <label className="space-y-2 text-sm text-foreground">
+                  <span>Duration (hrs)</span>
+                  <Input
+                    type="number"
+                    min="1"
+                    placeholder="e.g. 4"
+                    value={duration}
+                    onChange={(event) => setDuration(event.target.value)}
+                  />
+                </label>
               </div>
               <Button
                 onClick={handleRequest}

@@ -52,6 +52,8 @@ export default function SettingsPage() {
         }
       );
       setProfile(res.data.user);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+      window.dispatchEvent(new Event("userUpdated"));
       toast.success(res.message ?? "Profile updated successfully!");
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Failed to update profile.");

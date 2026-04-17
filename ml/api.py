@@ -1,11 +1,17 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-import sys
-sys.path.insert(0, './premium_model')
-from predict import predict_premium
 
-app = FastAPI()
+from .routes.dashboard import router as dashboard_router
+from .routes.fraud import router as fraud_router
+from .routes.payout import router as payout_router
+from .routes.premium import router as premium_router
+from .routes.simulate import router as simulation_router
+
+app = FastAPI(
+    title="ShieldShift ML & Fraud API",
+    description="FastAPI service powering premium pricing, fraud detection, payout simulation, and actionable dashboards.",
+    version="1.0.0",
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -14,32 +20,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-class PremiumRequest(BaseModel):
-    city: str
-    season: str
-    activity_tier: str
-    poverty_score: float
+app.include_router(premium_router, prefix="/api")
+app.include_router(fraud_router, prefix="/api")
+app.include_router(payout_router, prefix="/api")
+app.include_router(dashboard_router, prefix="/api")
+app.include_router(simulation_router, prefix="/api")
 
-@app.post("/api/prices")
-def get_prices(req: PremiumRequest):
-    result = predict_premium(req.city, req.season, req.activity_tier, req.poverty_score)
-    tiers = result["tiers"]
-    return {
-        "basic":    tiers["basic"]["weekly_premium"],
-        "standard": tiers["standard"]["weekly_premium"],
-        "premium":  tiers["premium"]["weekly_premium"],
-        "zone":     result["zone"],
-        "loss_ratio": result["expected_loss_ratio"],
-        "sustainable": result["sustainable"],
-    }
 
-@app.get("/api/prices/default")
-def get_default_prices():
-    # Called on page load with sensible defaults
-    result = predict_premium("Mumbai", "monsoon", "high", 0.7)
-    tiers = result["tiers"]
-    return {
-        "basic":    tiers["basic"]["weekly_premium"],
-        "standard": tiers["standard"]["weekly_premium"],
-        "premium":  tiers["premium"]["weekly_premium"],
-    }
+@app.get("/health")
+def health_check():
+    return {"status": "ok", "service": "ShieldShift ML API"}
