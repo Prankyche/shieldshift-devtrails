@@ -4,6 +4,10 @@
 
 ---
 
+Pitch Deck : https://docs.google.com/presentation/d/1ZrmXNFMJcQOQCK2YKzYUHXn_7gRc236TWR1AAZeoI9g/edit?usp=sharing
+
+---
+
 ##  What Is ShieldShift?
 
 ShieldShift is an AI-enabled parametric insurance platform that protects food delivery partners (Zomato & Swiggy) from income loss caused by external disruptions they cannot control — extreme weather, severe pollution, local curfews, and platform outages.
@@ -260,7 +264,7 @@ When our system detects 3+ of these signals simultaneously across a batch, it tr
 
 ##  Demo Video
 
-> [https://youtube.com/shorts/Tcuxk1zeDZM?feature=share](https://youtu.be/0ZklXZ8LVZ0?si=4lKc87b1xVm-6ikK)
+> https://youtu.be/0ZklXZ8LVZ0?si=4lKc87b1xVm-6ikK
 
 ---
 
