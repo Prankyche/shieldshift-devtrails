@@ -1,6 +1,6 @@
 # ShieldShift — AI-Powered Parametric Insurance for India's Gig Workers
 
-> **Guidewire DEVTrails 2026 | Phase 1 Submission**
+> **Guidewire DEVTrails 2026**
 
 ---
 
@@ -57,6 +57,8 @@ The weekly premium is determined using the following function:
 - **Delivery Zone:** the likelihood of disruptions based on geographic risk (e.g., flood-prone or high-traffic zones)
 - **Season:** monsoon months carry a higher risk multiplier than winter months
 - **Historical Disruption Frequency:** how often the worker's zone has been hit by disruptions in the past
+
+Note : The insurance does not cover war, pandemics, and other catastrophic events. This is further ensured by analyzing government curfews, alerts, etc. By doing so, the viability of the product is preserved.
 
 ### AI-Based Pricing Model
 
@@ -178,13 +180,12 @@ The project is designed as a web-based platform with mobile-responsive design, e
 
 ### Phase 2 (March 21 – April 4): Building
 - Worker onboarding and registration flow
-- Policy creation and weekly premium engine
+- Dynamic Premium Calculation
 - Weather API integration
-- Basic claims management UI
+- Insurance Policy Management
 - Fraud detection MVP
 
 ### Phase 3 (April 5–17): Scale & Polish
-- ML-based dynamic pricing model
 - Advanced fraud detection
 - Instant payout simulation
 - Analytics dashboard (worker + admin views)
@@ -259,7 +260,7 @@ When our system detects 3+ of these signals simultaneously across a batch, it tr
 
 ##  Demo Video
 
-> https://youtube.com/shorts/Tcuxk1zeDZM?feature=share
+> [https://youtube.com/shorts/Tcuxk1zeDZM?feature=share](https://youtu.be/0ZklXZ8LVZ0?si=4lKc87b1xVm-6ikK)
 
 ---
 
