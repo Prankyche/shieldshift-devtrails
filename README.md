@@ -8,15 +8,17 @@ Pitch Deck : https://docs.google.com/presentation/d/1ZrmXNFMJcQOQCK2YKzYUHXn_7gR
 
 ---
 
-##  What Is ShieldShift?
+## What Is ShieldShift?
 
-ShieldShift is an AI-enabled parametric insurance platform that protects food delivery partners (Zomato & Swiggy) from income loss caused by external disruptions they cannot control — extreme weather, severe pollution, local curfews, and platform outages.
+Every day, millions of delivery workers cross flooded streets, brave pollution alerts, and lose entire shifts to curfews they never saw coming. They keep our cities fed and our packages delivered — but when the world stops, so does their income. No employer steps in. No safety net catches them. They just lose.
 
-When a delivery partner can't work because of a flood or a cyclone, they lose money with zero recourse. ShieldShift fixes that. The moment a disruption is detected in a worker's zone, ShieldShift automatically triggers a payout — no paperwork, no waiting, no rejection.
+ShieldShift was built for them.
+
+ShieldShift is an AI-powered parametric insurance platform designed exclusively for food delivery partners on Zomato and Swiggy. Our system watches the world so workers don't have to. When rainfall crosses a threshold, when pollution turns hazardous, when a curfew shuts down a zone — ShieldShift detects it automatically and transfers compensation directly to the worker's UPI account. No forms. No calls. No waiting. The event itself is the claim.
 
 ---
 
-##  Persona-Based Scenarios and Workflow
+## Persona-Based Scenarios and Workflow
 
 ### Our Persona: The Food Delivery Partner
 
@@ -50,72 +52,109 @@ The application follows a structured pipeline to ensure accurate detection of di
 
 ---
 
-##  Weekly Premium Model and Parametric Triggers
+## Weekly Premium Model and Parametric Triggers
 
 The system adopts a dynamic weekly premium model designed specifically for gig economy workers whose income and risk exposure vary frequently. Unlike traditional insurance systems that rely on fixed monthly or yearly payments, this model ensures affordability, flexibility, and personalization.
 
 The weekly premium is determined using the following function:
 
-**Premium = f(Delivery Zone, Season, Historical Disruption Frequency)**
+**Premium = f(Delivery Zone, Season, Historical Disruption Frequency, Infrastructure, Rural/Urban, Activity Tier, Poverty Score)**
 
 - **Delivery Zone:** the likelihood of disruptions based on geographic risk (e.g., flood-prone or high-traffic zones)
 - **Season:** monsoon months carry a higher risk multiplier than winter months
-- **Historical Disruption Frequency:** how often the worker's zone has been hit by disruptions in the past
+- **Historical Disruption Frequency:** how often the worker's zone has been hit by disruptions in the past (based on last 10 years of data)
+- **Infrastructure:** areas with poor drainage and slow recovery charge higher premiums
+- **Rural/Urban:** rural areas have slower recovery times and higher payout exposure
+- **Activity Tier:** less active workers pay proportionally less
+- **Poverty Score:** workers closer to the poverty line receive a small premium subsidy
 
-Note : The insurance does not cover war, pandemics, and other catastrophic events. This is further ensured by analyzing government curfews, alerts, etc. By doing so, the viability of the product is preserved.
+> Note: The insurance does not cover war, pandemics, and other catastrophic events. This is further ensured by analyzing government curfews, alerts, etc. By doing so, the viability of the product is preserved.
 
 ### AI-Based Pricing Model
 
 A Random Forest Regressor is used to compute personalized premiums.
 
 - **Algorithm:** Random Forest Regressor
-- **Inputs:** Delivery zone, season, historical disruption frequency for that zone
+- **Inputs:** City, delivery zone, season, historical disruption frequency, infrastructure quality, rural/urban classification, activity tier, poverty score
 - **Output:** Predicted weekly premium for each worker
+- **Training data:** 2,000 synthetic records based on 10-year historical disruption patterns across 10 Indian cities
 - **Why Random Forest:** Handles both categorical and numerical data efficiently, is robust to outliers, and provides interpretability through feature importance scores
+- **Model Accuracy:** MAE of ₹0.32 — predictions accurate to within 32 paise
+
+**Feature Importance:**
+
+| Feature | Importance |
+|---------|------------|
+| Zone | 61.3% |
+| Rural/Urban | 18.8% |
+| Season | 6.7% |
+| Infrastructure | 6.3% |
+| Activity Tier | 3.5% |
+| City | 3.0% |
+| Poverty Score | 0.4% |
+| Disruption Frequency | 0.1% |
 
 ### Risk-Based Premium Tiers
 
 | Risk Level | Description | Weekly Premium |
 |------------|-------------|----------------|
 | Low Risk | Stable zones with minimal disruptions | ₹20 – ₹30 |
-| Medium Risk | Occasional disruptions | ₹40 – ₹60 |
-| High Risk | Frequent weather-related disruptions | ₹70 – ₹100 |
-| Critical Risk | Highly vulnerable zones (e.g., flood-prone) | ₹100+ |
+| Medium Risk | Occasional disruptions | ₹30 – ₹40 |
+| High Risk | Frequent weather-related disruptions | ₹40 – ₹55 |
+| Critical Risk | Highly vulnerable zones (e.g., flood-prone) | ₹55 – ₹80 |
 
 ### Parametric Triggers
 
 The system uses a parametric insurance model where payouts are triggered automatically when predefined conditions are met. This removes the need for manual claim filing and significantly reduces processing time.
 
 **1. Weather-Based Trigger**
-- Rainfall greater than 64.5mm in 3 hours
-- Extreme heat above 45°C for 4+ hours
-- Severe pollution: AQI > 400 (Hazardous) for 6+ hours
+- Rainfall greater than 64.5mm in 3 hours → 60% payout
+- Moderate rainfall greater than 35mm/hr → 30% payout
+- Extreme heat above 45°C for 4+ hours → 60% payout
 
-**2. Government / Policy Trigger**
-- Curfews or lockdowns flagged in worker's active zone
+**2. Pollution Trigger**
+- AQI > 400 (Hazardous) → 60% payout
+- AQI > 300 (Very Unhealthy) → 30% payout
+
+**3. Government / Policy Trigger**
+- Curfews or lockdowns flagged in worker's active zone → 60% payout
 - Emergency alerts from government feeds
 
-**3. Platform Disruption Trigger**
+**4. Platform Disruption Trigger**
 - Platform downtime exceeding 2 hours
 - Zomato/Swiggy API returns zero orders for 2+ consecutive hours
+
+> All triggers are cross-checked against the worker's registered zone AND active shift hours. A trigger that fires outside a worker's shift does not initiate a payout.
 
 ### Payout Calculation
 
 **Payout = Worker's Average Daily Earning × (Number of Disrupted Hours / 8)**
 
-Capped at the policy's maximum weekly payout.
+Capped at the policy's maximum weekly payout. Rural workers receive higher max payouts due to slower infrastructure recovery times.
 
-| Coverage Tier | Weekly Premium | Max Payout/Week |
-|---------------|----------------|-----------------|
-| Basic | ₹29 | ₹600 |
-| Standard | ₹49 | ₹1,200 |
-| Premium | ₹79 | ₹2,000 |
+| Coverage Tier | Weekly Premium | Max Payout/Week (Urban) | Max Payout/Week (Rural) |
+|---------------|----------------|--------------------------|--------------------------|
+| Basic | ~80% of base premium | ₹600 | ₹900 |
+| Standard | Base premium | ₹1,200 | ₹1,800 |
+| Premium | ~130% of base premium | ₹2,000 | ₹3,000 |
+
+### Financial Sustainability — Stress Test Results
+
+Our model maintains a target loss ratio of 0.55–0.70 (55–70 paise paid out per ₹1 collected).
+
+| City | Type | Weekly Premium | Loss Ratio | Status |
+|------|------|----------------|------------|--------|
+| Mumbai | Urban | ₹50 | 0.68 | Sustainable |
+| Chennai | Urban | ₹50 | 0.57 | Sustainable |
+| Kolkata | Urban | ₹50 | 0.57 | Sustainable |
+| Patna | Rural | ₹65 | 0.63 | Sustainable |
+| **Overall** | | | **0.61** | **Sustainable** |
 
 ---
 
-##  Platform Choice: Web-Based Platform
+## Platform Choice: Web-Based Platform
 
-The project is designed as a web-based platform with mobile-responsive design, ensuring accessibility across devices while maintaining centralized control and scalability. This is done for the following reasons:
+The project is designed as a web-based platform with mobile-responsive design, ensuring accessibility across devices while maintaining centralized control and scalability.
 
 **1. Universal Accessibility**
 - Accessible on any device (mobile, tablet, desktop) via browser
@@ -136,14 +175,14 @@ The project is designed as a web-based platform with mobile-responsive design, e
 
 ---
 
-##  AI/ML Integration Plan
+## AI/ML Integration Plan
 
 ### 1. Dynamic Premium Pricing Model
 - **Algorithm:** Random Forest Regressor
-- **Inputs:** Delivery zone, season, historical disruption frequency for that zone
-- **Output:** Personalized weekly premium
-- **Training data:** Historical weather data + historical disruption records by zone (synthetic for Phase 1; real API data from Phase 2)
-- **Why Random Forest:** Handles mixed input types well, robust to outliers, and provides feature importance scores so we can explain which factors most influence a worker's premium
+- **Inputs:** City, zone, season, historical disruption frequency, infrastructure, rural/urban, activity tier, poverty score
+- **Output:** Personalized weekly premium + dynamic tier pricing
+- **Training data:** 2,000 synthetic records based on 10-year historical disruption patterns
+- **Why Random Forest:** Handles mixed input types well, robust to outliers, and provides feature importance scores
 
 ### 2. Fraud Detection Engine
 - **Algorithm:** Autoencoder (Neural Network based anomaly detection)
@@ -159,7 +198,7 @@ The project is designed as a web-based platform with mobile-responsive design, e
 
 ---
 
-##  Tech Stack
+## Tech Stack
 
 | Layer | Technology |
 |-------|------------|
@@ -176,28 +215,120 @@ The project is designed as a web-based platform with mobile-responsive design, e
 
 ##  Development Plan
 
-### Phase 1 (March 4–20): Idea Creation
+### Phase 1 (March 4–20): Idea Creation 
 - Problem research and persona definition
 - Architecture design
 - README and idea document
 - 2-minute pitch video
 
-### Phase 2 (March 21 – April 4): Building
+### Phase 2 (March 21 – April 4): Building 
 - Worker onboarding and registration flow
-- Dynamic Premium Calculation
-- Weather API integration
-- Insurance Policy Management
+- Dynamic premium calculation (Random Forest model)
+- Weather API integration and disruption triggers
+- Insurance policy management
 - Fraud detection MVP
 
 ### Phase 3 (April 5–17): Scale & Polish
-- Advanced fraud detection
+- Advanced fraud detection (Autoencoder)
 - Instant payout simulation
 - Analytics dashboard (worker + admin views)
 - Final pitch deck and 5-minute demo video
 
 ---
 
-##  Adversarial Defense & Anti-Spoofing Strategy
+## Getting Started
+
+### Prerequisites
+- Python 3.10+
+- Node.js 18+
+- PostgreSQL
+- Git
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/Prankyche/shieldshift-devtrails.git
+cd shieldshift-devtrails
+```
+
+### 2. Set Up the ML Models
+
+```bash
+cd ml/premium_model
+pip install scikit-learn pandas numpy requests
+python generate_data.py
+python train_model.py
+```
+
+### 3. Set Up the Backend
+
+```bash
+cd backend
+pip install -r requirements.txt
+```
+
+Create a `.env` file inside the `backend/` folder:
+
+```
+DATABASE_URL=postgresql://username:password@localhost:5432/shieldshift
+OPENWEATHERMAP_API_KEY=your_api_key_here
+```
+
+Run the backend:
+
+```bash
+uvicorn main:app --reload
+```
+
+Backend will be running at `http://localhost:8000`
+
+### 4. Set Up the Frontend
+
+```bash
+cd frontend
+npm install
+npm start
+```
+
+Frontend will be running at `http://localhost:3000`
+
+### 5. Verify ML is Working
+
+```bash
+python ml/premium_model/predict.py
+python ml/premium_model/stress_test.py
+python ml/triggers/weather_trigger.py
+```
+
+### 6. Test the Premium API
+
+```bash
+curl -X POST http://localhost:8000/api/calculate-premium \
+-H "Content-Type: application/json" \
+-d '{"city": "Chennai", "season": "monsoon", "activity_tier": "high", "poverty_score": 0.8}'
+```
+
+Expected response:
+
+```json
+{
+  "city": "Chennai",
+  "zone": "high",
+  "is_rural": false,
+  "base_weekly_premium": 50,
+  "tiers": {
+    "basic": {"weekly_premium": 40, "max_payout_week": 600},
+    "standard": {"weekly_premium": 50, "max_payout_week": 1200},
+    "premium": {"weekly_premium": 65, "max_payout_week": 2000}
+  },
+  "expected_loss_ratio": 0.57,
+  "sustainable": true
+}
+```
+
+---
+
+## Adversarial Defense & Anti-Spoofing Strategy
 
 *Market Crash scenario: a coordinated ring of 500 delivery partners using GPS spoofing apps to fake their location into a declared disaster zone and trigger mass false payouts.*
 
@@ -262,14 +393,16 @@ When our system detects 3+ of these signals simultaneously across a batch, it tr
 
 ---
 
-##  Demo Video
+## Demo Video
 
 > https://youtu.be/0ZklXZ8LVZ0?si=4lKc87b1xVm-6ikK
 
 ---
 
-##  Team
+## Team
 
 > ShieldShift — Guidewire DEVTrails 2026
 
 ---
+
+*Built for India's 15 million gig workers who deserve a safety net.*
